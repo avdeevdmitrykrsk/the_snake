@@ -37,7 +37,7 @@ clock = pygame.time.Clock()
 class GameObject:
 
     def __init__(self):
-        self.position = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
+        self.position = (SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
         self.body_color = None
 
     def draw(self):
@@ -50,6 +50,7 @@ class Apple(GameObject):
         GameObject.__init__(self)
         self.body_color = (255, 0, 0)
         self.position = None
+        Apple.randomize_position(self)
 
     def randomize_position(self):
         self.position = (
@@ -88,21 +89,14 @@ class Snake(GameObject):
         self.head = Snake.get_head_position(self.positions)
         self.last = self.positions[-1]
 
-        if len(self.positions) >= self.length:
-            self.positions.pop(-1)
-        
-        if self.head[0] == SCREEN_WIDTH:
-            new_head_width = (0, self.head[1])
-            self.head = new_head_width
-        elif self.head[1] == SCREEN_HEIGHT:
-            new_head_height = (self.head[0], 0)
-            self.head = new_head_height
+        if self.head[0] >= SCREEN_WIDTH:
+            self.head = (-20, self.head[1])
+        elif self.head[1] >= SCREEN_HEIGHT:
+            self.head = (self.head[0], 0)
         elif self.head[0] < 0:
-            new_head_widdth_below = (640, self.head[1])
-            self.head = new_head_widdth_below
+            self.head = (640, self.head[1])
         elif self.head[1] < 0:
-            new_head_height_below = (self.head[0], 480)
-            self.head = new_head_height_below
+            self.head = (self.head[0], 480)
 
         if self.direction is UP:
             self.positions.insert(0, (self.head[0], self.head[1] - GRID_SIZE))
@@ -112,12 +106,11 @@ class Snake(GameObject):
             self.positions.insert(0, (self.head[0], self.head[1] + GRID_SIZE))
         elif self.direction is LEFT:
             self.positions.insert(0, (self.head[0] - GRID_SIZE, self.head[1]))
-
-        for match in self.positions:
-            if match == self.head:
-                self.reset()
-
-
+        while len(self.positions) > self.length:
+            self.positions.pop(-1)
+        for match in self.positions[2:]:
+            if self.positions[0] == match and self.positions[0] == match:
+                Snake.reset(self)
 
     # Метод draw класса Snake
     def draw(self, surface):
@@ -148,9 +141,9 @@ class Snake(GameObject):
     
     def reset(self):
         directions = (UP, DOWN, LEFT, RIGHT)
-        self.length == 1
-        self.positions == self.head
-        self.direction == choice(directions)
+        self.direction = choice(directions)
+        self.length = 1
+        self.positions = [self.position]
         screen.fill(BOARD_BACKGROUND_COLOR)
 
 
@@ -174,7 +167,6 @@ def main():
     # Тут нужно создать экземпляры классов
     snake = Snake()
     apple = Apple()
-    apple.randomize_position()
 
     while True:
         clock.tick(SPEED)
