@@ -157,7 +157,6 @@ class Snake(GameObject):
         while len(self.positions) > self.length:
             self.positions.pop(-1)
 
-
     def draw(self, surface):
         """Метод отрисовывает змейку и затирает последний сегмент."""
         for position in self.positions:
@@ -191,7 +190,6 @@ class Snake(GameObject):
             pygame.time.wait(3000)
             pygame.quit()
 
-
     def draw_win_screen(self):
         """Метод отрисовывает экран победы в игре."""
         win_src = pygame.image.load('win.png')
@@ -220,7 +218,10 @@ class Snake(GameObject):
 
     @staticmethod
     def check_and_set_direction(value):
-        """Функция задаёт напрвление движения змейки исходя из нажатой клавиши."""
+        """
+        Функция задаёт напрвление движения
+        змейки исходя из нажатой клавиши.
+        """
         if value.direction is UP:
             value.positions.insert(
                 0, (value.head[0], value.head[1] - GRID_SIZE)
