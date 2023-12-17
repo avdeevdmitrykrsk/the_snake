@@ -9,8 +9,8 @@
 если длина змейки будет равна 50, отрисуется экран "Победа".
 """
 
+from random import choice, randint
 import pygame
-from random import choice
 
 pygame.init()
 
@@ -26,8 +26,16 @@ DOWN = (0, 1)
 LEFT = (-1, 0)
 RIGHT = (1, 0)
 
-# Цвета фона - черный
+NEW_SNAKE_POS = -20
+
+# Цвета
 BOARD_BACKGROUND_COLOR = (0, 234, 242)
+APPLE_BODY_COLOR = (255, 0, 0)
+APPLE_AROUND_COLOR = (244, 255, 0)
+WRONG_APPLE_COLOR = (0, 0, 0)
+WRONG_APPLE_AROUND_COLOR = (244, 255, 0)
+SNAKE_BODY_COLOR = (0, 219, 0)
+SNAKE_AROUND_COLOR = (0, 0, 0)
 
 # Скорость движения змейки
 SPEED = 13
@@ -50,13 +58,42 @@ class GameObject:
         self.position = (SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
         self.body_color = None
 
-    def draw(self):
-        """
-        Метод, который предназначен для переопределения
-        в дочерних классах. Этот метод должен определять, как объект
-        будет отрисовываться на экране.
-        """
-        pass
+    def draw_cell(self, surface, color):
+        """Метод отрисовывает объекты в игре."""
+        if isinstance(self, Snake):
+            for position in self.positions:
+                rect = (
+                    pygame.Rect(
+                        (position[0], position[1]), (GRID_SIZE, GRID_SIZE)
+                    )
+                )
+                pygame.draw.rect(surface, self.body_color, rect)
+                pygame.draw.rect(surface, BOARD_BACKGROUND_COLOR, rect, 1)
+
+            head = self.positions[0]
+            head_rect = pygame.Rect((head[0], head[1]), (GRID_SIZE, GRID_SIZE))
+            pygame.draw.rect(surface, self.body_color, head_rect)
+            pygame.draw.rect(surface, SNAKE_AROUND_COLOR, head_rect, 4)
+            if self.last:
+                last_rect = pygame.Rect(
+                    (self.last[0], self.last[1]),
+                    (GRID_SIZE, GRID_SIZE)
+                )
+                pygame.draw.rect(surface, BOARD_BACKGROUND_COLOR, last_rect)
+        else:
+            rect = pygame.Rect(
+                (self.position[0], self.position[1]),
+                (GRID_SIZE, GRID_SIZE)
+            )
+            pygame.draw.rect(surface, self.body_color, rect)
+            pygame.draw.rect(surface, color, rect, 3)
+
+    def randomize_position(self):
+        """Устанавливает случайную позицию для яблок в игре."""
+        self.position = (
+            choice([round(randint(0, SCREEN_WIDTH) / 20) * 20]),
+            choice([round(randint(0, SCREEN_HEIGHT) / 20) * 20]),
+        )
 
 
 class Apple(GameObject):
@@ -66,26 +103,14 @@ class Apple(GameObject):
     """
 
     def __init__(self):
-        GameObject.__init__(self)
-        self.body_color = (255, 0, 0)
+        super().__init__()
+        self.body_color = (APPLE_BODY_COLOR)
         self.position = None
-        Apple.randomize_position(self)
+        self.randomize_position()
 
-    def randomize_position(self):
-        """Устанавливает случайную позицию для яблока в игре."""
-        self.position = (
-            choice([_ for _ in range(0, 1240) if _ % 40 == 0]),
-            choice([_ for _ in range(0, 800) if _ % 40 == 0])
-        )
-
-    def draw(self, surface):
-        """Метод отрисовывает яблоко в игре."""
-        rect = pygame.Rect(
-            (self.position[0], self.position[1]),
-            (GRID_SIZE, GRID_SIZE)
-        )
-        pygame.draw.rect(surface, self.body_color, rect)
-        pygame.draw.rect(surface, (244, 255, 0), rect, 3)
+    def draw(self):
+        """Отрисовывает яблоко в игре."""
+        super().draw_cell(screen, APPLE_AROUND_COLOR)
 
 
 class WrongApple(GameObject):
@@ -95,38 +120,26 @@ class WrongApple(GameObject):
     """
 
     def __init__(self):
-        GameObject.__init__(self)
-        self.body_color = (0, 0, 0)
+        super().__init__()
+        self.body_color = WRONG_APPLE_COLOR
         self.position = None
-        WrongApple.randomize_position(self)
+        self.randomize_position()
 
-    def randomize_position(self):
-        """Устанавливает случайную позицию для гнилого яблока в игре."""
-        self.position = (
-            choice([_ for _ in range(0, 1240) if _ % 40 == 0]),
-            choice([_ for _ in range(0, 800) if _ % 40 == 0])
-        )
-
-    def draw(self, surface):
-        """Метод отрисовывает яблоко в игре."""
-        rect = pygame.Rect(
-            (self.position[0], self.position[1]),
-            (GRID_SIZE, GRID_SIZE)
-        )
-        pygame.draw.rect(surface, self.body_color, rect)
-        pygame.draw.rect(surface, (244, 255, 0), rect, 3)
+    def draw(self):
+        """Отрисовывает гнилое яблоко в игре."""
+        super().draw_cell(screen, WRONG_APPLE_AROUND_COLOR)
 
 
 class Snake(GameObject):
     """На основе этого класса создаётся змейка в игре."""
 
     def __init__(self):
-        GameObject.__init__(self)
+        super().__init__()
         self.length = 1
         self.positions = [self.position]
         self.direction = RIGHT
         self.next_direction = None
-        self.body_color = (0, 219, 0)
+        self.body_color = SNAKE_BODY_COLOR
         self.last = None
 
     def update_direction(self):
@@ -137,66 +150,27 @@ class Snake(GameObject):
 
     def move(self, apple, *wr_apples):
         """Метод отвечает за обновление положения змейки в игре."""
-        self.head = Snake.get_head_position(self.positions)
+        self.head = self.get_head_position(self.positions)
         self.last = self.positions[-1]
 
         if self.head[0] >= SCREEN_WIDTH:
-            self.head = (-20, self.head[1])
+            self.head = (NEW_SNAKE_POS, self.head[1])
         elif self.head[1] >= SCREEN_HEIGHT:
             self.head = (self.head[0], 0)
         elif self.head[0] < 0:
-            self.head = (1240, self.head[1])
+            self.head = (SCREEN_WIDTH, self.head[1])
         elif self.head[1] < 0:
-            self.head = (self.head[0], 800)
+            self.head = (self.head[0], SCREEN_HEIGHT)
 
-        Snake.check_and_set_direction(self)
-        Snake.check_collision(self, apple, wr_apples)
+        self.check_and_set_direction(self)
+        self.check_collision(self, apple, wr_apples)
 
         while len(self.positions) > self.length:
             self.positions.pop(-1)
 
-    def draw(self, surface):
+    def draw(self):
         """Метод отрисовывает змейку и затирает последний сегмент."""
-        for position in self.positions:
-            rect = (
-                pygame.Rect((position[0], position[1]), (GRID_SIZE, GRID_SIZE))
-            )
-            pygame.draw.rect(surface, self.body_color, rect)
-            pygame.draw.rect(surface, (93, 216, 228), rect, 1)
-
-        head = self.positions[0]
-        head_rect = pygame.Rect((head[0], head[1]), (GRID_SIZE, GRID_SIZE))
-        pygame.draw.rect(surface, self.body_color, head_rect)
-        pygame.draw.rect(surface, (0, 0, 0), head_rect, 4)
-        if self.last:
-            last_rect = pygame.Rect(
-                (self.last[0], self.last[1]),
-                (GRID_SIZE, GRID_SIZE)
-            )
-            pygame.draw.rect(surface, BOARD_BACKGROUND_COLOR, last_rect)
-
-    def check_win_lose(self):
-        """Метод проверки победы или поражения в игре."""
-        if self.length == 50:
-            Snake.draw_win_screen(self)
-            pygame.display.update()
-            pygame.time.wait(3000)
-            pygame.quit()
-        elif self.length < 1:
-            Snake.draw_loose_screen(self)
-            pygame.display.update()
-            pygame.time.wait(3000)
-            pygame.quit()
-
-    def draw_win_screen(self):
-        """Метод отрисовывает экран победы в игре."""
-        win_src = pygame.image.load('win.png')
-        screen.blit(win_src, (0, 0))
-
-    def draw_loose_screen(self):
-        """Метод отрисовывает экран поражения в игре."""
-        loose_src = pygame.image.load('loose.png')
-        screen.blit(loose_src, (0, 0))
+        super().draw_cell(screen, SNAKE_BODY_COLOR)
 
     @staticmethod
     def get_head_position(positions):
@@ -284,11 +258,10 @@ def main():
         handle_keys(snake)
         snake.update_direction()
         snake.move(apple, wr_apple_1, wr_apple_2)
-        snake.check_win_lose()
-        apple.draw(screen)
-        wr_apple_1.draw(screen)
-        wr_apple_2.draw(screen)
-        snake.draw(screen)
+        apple.draw()
+        wr_apple_1.draw()
+        wr_apple_2.draw()
+        snake.draw()
         pygame.display.update()
 
 
