@@ -59,7 +59,7 @@ class GameObject:
         self.body_color = None
 
     def draw(self, surface, color):
-        """Метод отрисовывает объекты в игре."""
+        """Метод отрисовывает яблоки в игре."""
         rect = pygame.Rect(
             (self.position[0], self.position[1]),
             (GRID_SIZE, GRID_SIZE)
