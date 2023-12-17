@@ -58,7 +58,7 @@ class GameObject:
         self.position = (SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
         self.body_color = None
 
-    def draw_cell(self, surface, color):
+    def draw(self, surface, color):
         """Метод отрисовывает объекты в игре."""
         if isinstance(self, Snake):
             for position in self.positions:
@@ -110,7 +110,7 @@ class Apple(GameObject):
 
     def draw(self):
         """Отрисовывает яблоко в игре."""
-        super().draw_cell(screen, APPLE_AROUND_COLOR)
+        super().draw(screen, APPLE_AROUND_COLOR)
 
 
 class WrongApple(GameObject):
@@ -127,7 +127,7 @@ class WrongApple(GameObject):
 
     def draw(self):
         """Отрисовывает гнилое яблоко в игре."""
-        super().draw_cell(screen, WRONG_APPLE_AROUND_COLOR)
+        super().draw(screen, WRONG_APPLE_AROUND_COLOR)
 
 
 class Snake(GameObject):
@@ -170,7 +170,7 @@ class Snake(GameObject):
 
     def draw(self):
         """Метод отрисовывает змейку и затирает последний сегмент."""
-        super().draw_cell(screen, SNAKE_BODY_COLOR)
+        super().draw(screen, SNAKE_BODY_COLOR)
 
     @staticmethod
     def get_head_position(positions):
