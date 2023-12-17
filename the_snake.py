@@ -60,39 +60,20 @@ class GameObject:
 
     def draw(self, surface, color):
         """Метод отрисовывает объекты в игре."""
-        if isinstance(self, Snake):
-            for position in self.positions:
-                rect = (
-                    pygame.Rect(
-                        (position[0], position[1]), (GRID_SIZE, GRID_SIZE)
-                    )
-                )
-                pygame.draw.rect(surface, self.body_color, rect)
-                pygame.draw.rect(surface, BOARD_BACKGROUND_COLOR, rect, 1)
-
-            head = self.positions[0]
-            head_rect = pygame.Rect((head[0], head[1]), (GRID_SIZE, GRID_SIZE))
-            pygame.draw.rect(surface, self.body_color, head_rect)
-            pygame.draw.rect(surface, SNAKE_AROUND_COLOR, head_rect, 4)
-            if self.last:
-                last_rect = pygame.Rect(
-                    (self.last[0], self.last[1]),
-                    (GRID_SIZE, GRID_SIZE)
-                )
-                pygame.draw.rect(surface, BOARD_BACKGROUND_COLOR, last_rect)
-        else:
-            rect = pygame.Rect(
-                (self.position[0], self.position[1]),
-                (GRID_SIZE, GRID_SIZE)
-            )
-            pygame.draw.rect(surface, self.body_color, rect)
-            pygame.draw.rect(surface, color, rect, 3)
+        rect = pygame.Rect(
+            (self.position[0], self.position[1]),
+            (GRID_SIZE, GRID_SIZE)
+        )
+        pygame.draw.rect(surface, self.body_color, rect)
+        pygame.draw.rect(surface, color, rect, 3)
 
     def randomize_position(self):
         """Устанавливает случайную позицию для яблок в игре."""
         self.position = (
-            choice([round(randint(0, SCREEN_WIDTH) / 20) * 20]),
-            choice([round(randint(0, SCREEN_HEIGHT) / 20) * 20]),
+            (
+                round(randint(0, SCREEN_WIDTH) / 20) * 20,
+                round(randint(0, SCREEN_HEIGHT) / 20) * 20,
+            )
         )
 
 
@@ -168,9 +149,27 @@ class Snake(GameObject):
         while len(self.positions) > self.length:
             self.positions.pop(-1)
 
-    def draw(self):
+    def draw(self, surface):
         """Метод отрисовывает змейку и затирает последний сегмент."""
-        super().draw(screen, SNAKE_BODY_COLOR)
+        for position in self.positions:
+            rect = (
+                pygame.Rect(
+                    (position[0], position[1]), (GRID_SIZE, GRID_SIZE)
+                )
+            )
+            pygame.draw.rect(surface, self.body_color, rect)
+            pygame.draw.rect(surface, BOARD_BACKGROUND_COLOR, rect, 1)
+
+        head = self.positions[0]
+        head_rect = pygame.Rect((head[0], head[1]), (GRID_SIZE, GRID_SIZE))
+        pygame.draw.rect(surface, self.body_color, head_rect)
+        pygame.draw.rect(surface, SNAKE_AROUND_COLOR, head_rect, 4)
+        if self.last:
+            last_rect = pygame.Rect(
+                (self.last[0], self.last[1]),
+                (GRID_SIZE, GRID_SIZE)
+            )
+            pygame.draw.rect(surface, BOARD_BACKGROUND_COLOR, last_rect)
 
     @staticmethod
     def get_head_position(positions):
@@ -261,7 +260,7 @@ def main():
         apple.draw()
         wr_apple_1.draw()
         wr_apple_2.draw()
-        snake.draw()
+        snake.draw(screen)
         pygame.display.update()
 
 
