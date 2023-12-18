@@ -10,6 +10,7 @@
 """
 
 from random import choice, randint
+
 import pygame
 
 pygame.init()
@@ -19,12 +20,18 @@ SCREEN_WIDTH, SCREEN_HEIGHT = 1240, 800
 GRID_SIZE = 20
 GRID_WIDTH = SCREEN_WIDTH // GRID_SIZE
 GRID_HEIGHT = SCREEN_HEIGHT // GRID_SIZE
+SNAKE_STARTPOS_WIDTH = SCREEN_WIDTH // 2
+SNAKE_STARTPOS_HEIGHT = SCREEN_HEIGHT // 2
 
 # Направления движения
 UP = (0, -1)
 DOWN = (0, 1)
 LEFT = (-1, 0)
 RIGHT = (1, 0)
+
+# Длины тела змейки
+SNAKE_DEFAULT_LENGTH = 1    # Базовая
+SNAKE_CHANGE_LENGTH = 1    # Изменение длины
 
 NEW_SNAKE_POS = -20
 
@@ -37,15 +44,26 @@ WRONG_APPLE_AROUND_COLOR = (244, 255, 0)
 SNAKE_BODY_COLOR = (0, 219, 0)
 SNAKE_AROUND_COLOR = (0, 0, 0)
 
+# pygame_rect толщина линиий объектов
+APPLE_LINE_THICKNESS = 3
+SNAKE_HEAD_LINE_THICKNESS = 4
+SNAKE_BODY_LINE_THICKNESS = 1
+
 # Скорость движения змейки
 SPEED = 13
 
 # Настройка игрового окна
-screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), 0, 32)
+WINDOW_TITLE = 'Змейка'
+DISPLAY_MODE = 0    # Режим отображения экрана
+COLOR_DEPTH_BIT = 32    # Глубина цвета экрана
+END_OF_BOARD = 0
+screen = pygame.display.set_mode(
+    (SCREEN_WIDTH, SCREEN_HEIGHT), DISPLAY_MODE, COLOR_DEPTH_BIT
+)
 screen.fill(BOARD_BACKGROUND_COLOR)
 
 # Заголовок окна игрового поля
-pygame.display.set_caption('Змейка')
+pygame.display.set_caption(WINDOW_TITLE)
 
 # Настройка времени
 clock = pygame.time.Clock()
@@ -55,7 +73,7 @@ class GameObject:
     """Родительский класс для Snake и Apple."""
 
     def __init__(self):
-        self.position = (SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
+        self.position = (SNAKE_STARTPOS_WIDTH, SNAKE_STARTPOS_HEIGHT)
         self.body_color = None
 
     def draw(self, surface, color):
@@ -65,14 +83,14 @@ class GameObject:
             (GRID_SIZE, GRID_SIZE)
         )
         pygame.draw.rect(surface, self.body_color, rect)
-        pygame.draw.rect(surface, color, rect, 3)
+        pygame.draw.rect(surface, color, rect, APPLE_LINE_THICKNESS)
 
     def randomize_position(self):
         """Устанавливает случайную позицию для яблок в игре."""
         self.position = (
             (
-                round(randint(0, SCREEN_WIDTH) / 20) * 20,
-                round(randint(0, SCREEN_HEIGHT) / 20) * 20,
+                round(randint(0, SCREEN_WIDTH) / GRID_SIZE) * GRID_SIZE,
+                round(randint(0, SCREEN_HEIGHT) / GRID_SIZE) * GRID_SIZE,
             )
         )
 
@@ -85,7 +103,7 @@ class Apple(GameObject):
 
     def __init__(self):
         super().__init__()
-        self.body_color = (APPLE_BODY_COLOR)
+        self.body_color = APPLE_BODY_COLOR
         self.position = None
         self.randomize_position()
 
@@ -116,7 +134,7 @@ class Snake(GameObject):
 
     def __init__(self):
         super().__init__()
-        self.length = 1
+        self.length = SNAKE_DEFAULT_LENGTH
         self.positions = [self.position]
         self.direction = RIGHT
         self.next_direction = None
@@ -137,10 +155,10 @@ class Snake(GameObject):
         if self.head[0] >= SCREEN_WIDTH:
             self.head = (NEW_SNAKE_POS, self.head[1])
         elif self.head[1] >= SCREEN_HEIGHT:
-            self.head = (self.head[0], 0)
-        elif self.head[0] < 0:
+            self.head = (self.head[0], END_OF_BOARD)
+        elif self.head[0] < END_OF_BOARD:
             self.head = (SCREEN_WIDTH, self.head[1])
-        elif self.head[1] < 0:
+        elif self.head[1] < END_OF_BOARD:
             self.head = (self.head[0], SCREEN_HEIGHT)
 
         self.check_and_set_direction(self)
@@ -158,12 +176,17 @@ class Snake(GameObject):
                 )
             )
             pygame.draw.rect(surface, self.body_color, rect)
-            pygame.draw.rect(surface, BOARD_BACKGROUND_COLOR, rect, 1)
+            pygame.draw.rect(
+                surface, BOARD_BACKGROUND_COLOR,
+                rect, SNAKE_BODY_LINE_THICKNESS,
+            )
 
         head = self.positions[0]
         head_rect = pygame.Rect((head[0], head[1]), (GRID_SIZE, GRID_SIZE))
         pygame.draw.rect(surface, self.body_color, head_rect)
-        pygame.draw.rect(surface, SNAKE_AROUND_COLOR, head_rect, 4)
+        pygame.draw.rect(
+            surface, SNAKE_AROUND_COLOR, head_rect, SNAKE_HEAD_LINE_THICKNESS
+        )
         if self.last:
             last_rect = pygame.Rect(
                 (self.last[0], self.last[1]),
@@ -183,7 +206,7 @@ class Snake(GameObject):
         """
         directions = (UP, DOWN, LEFT, RIGHT)
         self.direction = choice(directions)
-        self.length = 1
+        self.length = SNAKE_DEFAULT_LENGTH
         self.positions = [self.position]
         screen.fill(BOARD_BACKGROUND_COLOR)
 
@@ -221,10 +244,10 @@ class Snake(GameObject):
                 if snake.positions[0] == match and snake.positions[0] == match:
                     Snake.reset(snake)
             if snake.positions[0] == apple.position:
-                snake.length += 1
+                snake.length += SNAKE_CHANGE_LENGTH
                 apple.randomize_position()
             elif snake.positions[0] == wr_apple.position:
-                snake.length -= 1
+                snake.length -= SNAKE_CHANGE_LENGTH
                 screen.fill(BOARD_BACKGROUND_COLOR)
                 wr_apple.randomize_position()
 
