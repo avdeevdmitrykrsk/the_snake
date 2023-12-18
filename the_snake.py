@@ -20,8 +20,8 @@ SCREEN_WIDTH, SCREEN_HEIGHT = 1240, 800
 GRID_SIZE = 20
 GRID_WIDTH = SCREEN_WIDTH // GRID_SIZE
 GRID_HEIGHT = SCREEN_HEIGHT // GRID_SIZE
-SNAKE_STARTPOS_WIDTH = SCREEN_WIDTH // 2
-SNAKE_STARTPOS_HEIGHT = SCREEN_HEIGHT // 2
+START_POS_WIDTH = SCREEN_WIDTH // 2
+START_POS_HEIGHT = SCREEN_HEIGHT // 2
 
 # Направления движения
 UP = (0, -1)
@@ -53,10 +53,11 @@ SNAKE_BODY_LINE_THICKNESS = 1
 SPEED = 13
 
 # Настройка игрового окна
+START_BOARD_X = 0
+START_BOARD_Y = 0
 WINDOW_TITLE = 'Змейка'
 DISPLAY_MODE = 0    # Режим отображения экрана
 COLOR_DEPTH_BIT = 32    # Глубина цвета экрана
-END_OF_BOARD = 0
 screen = pygame.display.set_mode(
     (SCREEN_WIDTH, SCREEN_HEIGHT), DISPLAY_MODE, COLOR_DEPTH_BIT
 )
@@ -73,7 +74,7 @@ class GameObject:
     """Родительский класс для Snake и Apple."""
 
     def __init__(self):
-        self.position = (SNAKE_STARTPOS_WIDTH, SNAKE_STARTPOS_HEIGHT)
+        self.position = (START_POS_WIDTH, START_POS_HEIGHT)
         self.body_color = None
 
     def draw(self, surface, color):
@@ -89,8 +90,12 @@ class GameObject:
         """Устанавливает случайную позицию для яблок в игре."""
         self.position = (
             (
-                round(randint(0, SCREEN_WIDTH) / GRID_SIZE) * GRID_SIZE,
-                round(randint(0, SCREEN_HEIGHT) / GRID_SIZE) * GRID_SIZE,
+                round(randint(
+                    START_BOARD_X, SCREEN_WIDTH
+                ) / GRID_SIZE) * GRID_SIZE,
+                round(randint(
+                    START_BOARD_Y, SCREEN_HEIGHT
+                ) / GRID_SIZE) * GRID_SIZE,
             )
         )
 
@@ -155,10 +160,10 @@ class Snake(GameObject):
         if self.head[0] >= SCREEN_WIDTH:
             self.head = (NEW_SNAKE_POS, self.head[1])
         elif self.head[1] >= SCREEN_HEIGHT:
-            self.head = (self.head[0], END_OF_BOARD)
-        elif self.head[0] < END_OF_BOARD:
+            self.head = (self.head[0], START_BOARD_Y)
+        elif self.head[0] < START_BOARD_X:
             self.head = (SCREEN_WIDTH, self.head[1])
-        elif self.head[1] < END_OF_BOARD:
+        elif self.head[1] < START_BOARD_Y:
             self.head = (self.head[0], SCREEN_HEIGHT)
 
         self.check_and_set_direction(self)
