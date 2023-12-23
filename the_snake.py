@@ -10,14 +10,13 @@
 """
 
 from random import choice, randint
-from typing import Union, Optional
 
 import pygame
 
 pygame.init()
 
 # Константы для размеров
-SCREEN_WIDTH: int =  1240    # Размер окна по координате X
+SCREEN_WIDTH: int = 1240    # Размер окна по координате X
 SCREEN_HEIGHT: int = 800    # Размер окна по координате Y
 GRID_SIZE: int = 20    # Размер 1 клетки
 GRID_WIDTH: int = SCREEN_WIDTH // GRID_SIZE
@@ -30,6 +29,10 @@ UP: tuple = (0, -1)
 DOWN: tuple = (0, 1)
 LEFT: tuple = (-1, 0)
 RIGHT: tuple = (1, 0)
+U_L_DIAG: tuple = (-1, -1)
+U_R_DIAG: tuple = (1, -1)
+D_L_DIAG: tuple = (-1, 1)
+D_R_DIAG: tuple = (1, 1)
 
 # Длины тела змейки
 SNAKE_DEFAULT_LENGTH: int = 1    # Базовая
@@ -141,12 +144,14 @@ class Snake(GameObject):
 
     def __init__(self):
         super().__init__()
-        self.length = SNAKE_DEFAULT_LENGTH
-        self.positions = [self.position]
-        self.direction = RIGHT
-        self.next_direction = None
-        self.body_color = SNAKE_BODY_COLOR
+        self.length = None
+        self.positions = None
+        self.direction = None
         self.last = None
+        self.next_direction = None
+        self.last = None
+        self.body_color = SNAKE_BODY_COLOR
+        self.reset()
 
     def update_direction(self) -> None:
         """Метод обновления направления после нажатия на кнопку."""
@@ -173,6 +178,9 @@ class Snake(GameObject):
 
         while len(self.positions) > self.length:
             self.positions.pop(-1)
+
+        if self.length == 0:
+            self.reset()
 
     def draw(self, surface):
         """Метод отрисовывает змейку и затирает последний сегмент."""
@@ -212,10 +220,12 @@ class Snake(GameObject):
         в случае столкновения змейки с собой.
         """
         directions = (UP, DOWN, LEFT, RIGHT)
-        self.direction = choice(directions)
         self.length = SNAKE_DEFAULT_LENGTH
         self.positions = [self.position]
+        self.direction = choice(directions)
+        self.last = None
         screen.fill(BOARD_BACKGROUND_COLOR)
+
 
     def check_and_set_direction(self) -> None:
         """
@@ -238,6 +248,22 @@ class Snake(GameObject):
             self.positions.insert(
                 0, (self.head[0] - GRID_SIZE, self.head[1])
             )
+        elif self.direction is U_L_DIAG:
+            self.positions.insert(
+                0, (self.head[0] - GRID_SIZE, self.head[1] - GRID_SIZE)
+            )
+        elif self.direction is U_R_DIAG:
+            self.positions.insert(
+                0, (self.head[0] + GRID_SIZE, self.head[1] - GRID_SIZE)
+            )
+        elif self.direction is D_L_DIAG:
+            self.positions.insert(
+                0, (self.head[0] - GRID_SIZE, self.head[1] + GRID_SIZE)
+            )
+        elif self.direction is D_R_DIAG:
+            self.positions.insert(
+                0, (self.head[0] + GRID_SIZE, self.head[1] + GRID_SIZE)
+            )
 
     @staticmethod
     def check_collision(snake, apple, wr_apples) -> None:
@@ -257,12 +283,25 @@ class Snake(GameObject):
                 screen.fill(BOARD_BACKGROUND_COLOR)
                 wr_apple.randomize_position()
 
-full_directions = {
-    (pygame.K_UP, UP): DOWN,
-    (pygame.K_DOWN, DOWN): UP,
-    (pygame.K_LEFT, LEFT): RIGHT,
-    (pygame.K_RIGHT, RIGHT):  LEFT,
+
+full_directions: dict = {
+
+    'One_direction': {
+        (pygame.K_UP, UP): DOWN,
+        (pygame.K_DOWN, DOWN): UP,
+        (pygame.K_LEFT, LEFT): RIGHT,
+        (pygame.K_RIGHT, RIGHT): LEFT,
+    },
+
+    'Diag_direction': {
+        ((pygame.K_UP, pygame.K_LEFT), U_L_DIAG): D_R_DIAG,
+        ((pygame.K_UP, pygame.K_RIGHT), U_R_DIAG): D_L_DIAG,
+        ((pygame.K_DOWN, pygame.K_LEFT), D_L_DIAG): U_R_DIAG,
+        ((pygame.K_DOWN, pygame.K_RIGHT), D_R_DIAG): U_L_DIAG,
+    }
 }
+
+DIAG_LIST: list = []
 
 
 def handle_keys(game_object) -> None:
@@ -271,18 +310,22 @@ def handle_keys(game_object) -> None:
         if event.type == pygame.QUIT:
             pygame.quit()
         elif event.type == pygame.KEYDOWN:
-            global full_directions
-            for dir, value in full_directions.items():
-                if event.key == dir[0] and game_object.direction != value:
-                    game_object.next_direction = dir[1]
-            # if event.key == pygame.K_UP and game_object.direction != DOWN:
-            #     game_object.next_direction = UP
-            # elif event.key == pygame.K_DOWN and game_object.direction != UP:
-            #     game_object.next_direction = DOWN
-            # elif event.key == pygame.K_LEFT and game_object.direction != RIGHT:
-            #     game_object.next_direction = LEFT
-            # elif event.key == pygame.K_RIGHT and game_object.direction != LEFT:
-            #     game_object.next_direction = RIGHT
+            DIAG_LIST.append(event.key)
+            if len(DIAG_LIST) == 2:
+                for direction, value\
+                        in full_directions['Diag_direction'].items():
+                    if DIAG_LIST[0] in direction[0]\
+                            and DIAG_LIST[1] in direction[0]\
+                            and game_object.direction != value:
+                        game_object.direction = direction[1]
+            else:
+                for direction, value\
+                        in full_directions['One_direction'].items():
+                    if event.key in direction\
+                            and game_object.direction != value:
+                        game_object.direction = direction[1]
+        elif event.type == pygame.KEYUP:
+            DIAG_LIST.pop(0)
 
 
 def main() -> None:
