@@ -82,7 +82,14 @@ class GameObject:
         self.position = (START_POS_WIDTH, START_POS_HEIGHT)
         self.body_color = None
 
-    def draw(self, surface, color: tuple) -> None:
+    def draw(self):
+        """
+        Метод для отрисовки объектов.
+        Для переопределения в дочерних классах.
+        """
+        pass
+
+    def draw_cells(self, surface, color: tuple) -> None:
         """Метод отрисовывает яблоки в игре."""
         rect = pygame.Rect(
             (self.position[0], self.position[1]),
@@ -96,13 +103,17 @@ class GameObject:
         self.position = (
             (
                 round(randint(
-                    START_BOARD_X, SCREEN_WIDTH
+                    START_BOARD_X, SCREEN_WIDTH - 20
                 ) / GRID_SIZE) * GRID_SIZE,
                 round(randint(
-                    START_BOARD_Y, SCREEN_HEIGHT
+                    START_BOARD_Y, SCREEN_HEIGHT - 20
                 ) / GRID_SIZE) * GRID_SIZE,
             )
         )
+
+        if self.position in Snake.available_positions:
+            screen.fill(BOARD_BACKGROUND_COLOR)
+            self.randomize_position
 
 
 class Apple(GameObject):
@@ -117,9 +128,9 @@ class Apple(GameObject):
         self.position = None
         self.randomize_position()
 
-    def draw(self):
+    def draw_cells(self):
         """Отрисовывает яблоко в игре."""
-        super().draw(screen, APPLE_AROUND_COLOR)
+        super().draw_cells(screen, APPLE_AROUND_COLOR)
 
 
 class WrongApple(GameObject):
@@ -134,13 +145,15 @@ class WrongApple(GameObject):
         self.position = None
         self.randomize_position()
 
-    def draw(self):
+    def draw_cells(self):
         """Отрисовывает гнилое яблоко в игре."""
-        super().draw(screen, WRONG_APPLE_AROUND_COLOR)
+        super().draw_cells(screen, WRONG_APPLE_AROUND_COLOR)
 
 
 class Snake(GameObject):
     """На основе этого класса создаётся змейка в игре."""
+
+    available_positions: list = []
 
     def __init__(self):
         super().__init__()
@@ -163,16 +176,9 @@ class Snake(GameObject):
         """Метод отвечает за обновление положения змейки в игре."""
         self.head = self.get_head_position(self.positions)
         self.last = self.positions[-1]
+        Snake.available_positions.append(self.positions)
 
-        if self.head[0] >= SCREEN_WIDTH:
-            self.head = (NEW_SNAKE_POS, self.head[1])
-        elif self.head[1] >= SCREEN_HEIGHT:
-            self.head = (self.head[0], START_BOARD_Y)
-        elif self.head[0] < START_BOARD_X:
-            self.head = (SCREEN_WIDTH, self.head[1])
-        elif self.head[1] < START_BOARD_Y:
-            self.head = (self.head[0], SCREEN_HEIGHT)
-
+        self.cross_board_check()
         self.check_and_set_direction()
         self.check_collision(self, apple, wr_apples)
 
@@ -182,7 +188,7 @@ class Snake(GameObject):
         if self.length == 0:
             self.reset()
 
-    def draw(self, surface):
+    def draw_cells(self, surface):
         """Метод отрисовывает змейку и затирает последний сегмент."""
         for position in self.positions:
             rect = (
@@ -226,6 +232,19 @@ class Snake(GameObject):
         self.last = None
         screen.fill(BOARD_BACKGROUND_COLOR)
 
+    def cross_board_check(self):
+        """
+        Метод проверки выхода змейки за пределы экрана
+        и установки позиции с обратной стороны экрана.
+        """
+        if self.head[0] >= SCREEN_WIDTH:
+            self.head = (NEW_SNAKE_POS, self.head[1])
+        elif self.head[1] >= SCREEN_HEIGHT:
+            self.head = (self.head[0], START_BOARD_Y)
+        elif self.head[0] < START_BOARD_X:
+            self.head = (SCREEN_WIDTH, self.head[1])
+        elif self.head[1] < START_BOARD_Y:
+            self.head = (self.head[0], SCREEN_HEIGHT)
 
     def check_and_set_direction(self) -> None:
         """
@@ -248,22 +267,22 @@ class Snake(GameObject):
             self.positions.insert(
                 0, (self.head[0] - GRID_SIZE, self.head[1])
             )
-        elif self.direction is U_L_DIAG:
-            self.positions.insert(
-                0, (self.head[0] - GRID_SIZE, self.head[1] - GRID_SIZE)
-            )
-        elif self.direction is U_R_DIAG:
-            self.positions.insert(
-                0, (self.head[0] + GRID_SIZE, self.head[1] - GRID_SIZE)
-            )
-        elif self.direction is D_L_DIAG:
-            self.positions.insert(
-                0, (self.head[0] - GRID_SIZE, self.head[1] + GRID_SIZE)
-            )
-        elif self.direction is D_R_DIAG:
-            self.positions.insert(
-                0, (self.head[0] + GRID_SIZE, self.head[1] + GRID_SIZE)
-            )
+        # elif self.direction is U_L_DIAG:
+        #     self.positions.insert(
+        #         0, (self.head[0] - GRID_SIZE, self.head[1] - GRID_SIZE)
+        #     )
+        # elif self.direction is U_R_DIAG:
+        #     self.positions.insert(
+        #         0, (self.head[0] + GRID_SIZE, self.head[1] - GRID_SIZE)
+        #     )
+        # elif self.direction is D_L_DIAG:
+        #     self.positions.insert(
+        #         0, (self.head[0] - GRID_SIZE, self.head[1] + GRID_SIZE)
+        #     )
+        # elif self.direction is D_R_DIAG:
+        #     self.positions.insert(
+        #         0, (self.head[0] + GRID_SIZE, self.head[1] + GRID_SIZE)
+        #     )
 
     @staticmethod
     def check_collision(snake, apple, wr_apples) -> None:
@@ -274,14 +293,18 @@ class Snake(GameObject):
         for wr_apple in wr_apples:
             for match in snake.positions[2:]:
                 if snake.positions[0] == match and snake.positions[0] == match:
-                    Snake.reset(snake)
+                    snake.reset()
             if snake.positions[0] == apple.position:
                 snake.length += SNAKE_CHANGE_LENGTH
+                apple.randomize_position()
+            elif apple.position in snake.positions:
                 apple.randomize_position()
             elif snake.positions[0] == wr_apple.position:
                 snake.length -= SNAKE_CHANGE_LENGTH
                 screen.fill(BOARD_BACKGROUND_COLOR)
                 wr_apple.randomize_position()
+            elif wr_apple.position in snake.positions:
+                apple.randomize_position()
 
 
 full_directions: dict = {
@@ -293,15 +316,17 @@ full_directions: dict = {
         (pygame.K_RIGHT, RIGHT): LEFT,
     },
 
-    'Diag_direction': {
-        ((pygame.K_UP, pygame.K_LEFT), U_L_DIAG): D_R_DIAG,
-        ((pygame.K_UP, pygame.K_RIGHT), U_R_DIAG): D_L_DIAG,
-        ((pygame.K_DOWN, pygame.K_LEFT), D_L_DIAG): U_R_DIAG,
-        ((pygame.K_DOWN, pygame.K_RIGHT), D_R_DIAG): U_L_DIAG,
-    }
+    # 'Diag_direction': {
+    #     ((pygame.K_UP, pygame.K_LEFT), U_L_DIAG): D_R_DIAG,
+    #     ((pygame.K_UP, pygame.K_RIGHT), U_R_DIAG): D_L_DIAG,
+    #     ((pygame.K_DOWN, pygame.K_LEFT), D_L_DIAG): U_R_DIAG,
+    #     ((pygame.K_DOWN, pygame.K_RIGHT), D_R_DIAG): U_L_DIAG,
+    # }
 }
 
 DIAG_LIST: list = []
+
+game_pause = False
 
 
 def handle_keys(game_object) -> None:
@@ -309,22 +334,28 @@ def handle_keys(game_object) -> None:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
-        elif event.type == pygame.KEYDOWN:
+            quit()
+        elif event.type == pygame.KEYDOWN and event.key != pygame.K_p:
             DIAG_LIST.append(event.key)
-            if len(DIAG_LIST) == 2:
-                for direction, value\
-                        in full_directions['Diag_direction'].items():
-                    if DIAG_LIST[0] in direction[0]\
-                            and DIAG_LIST[1] in direction[0]\
-                            and game_object.direction != value:
-                        game_object.direction = direction[1]
-            else:
-                for direction, value\
-                        in full_directions['One_direction'].items():
-                    if event.key in direction\
-                            and game_object.direction != value:
-                        game_object.direction = direction[1]
-        elif event.type == pygame.KEYUP:
+            # if len(DIAG_LIST) == 2:
+            #     for direction, value\
+            #             in full_directions['Diag_direction'].items():
+            #         if DIAG_LIST[0] in direction[0]\
+            #                 and DIAG_LIST[1] in direction[0]\
+            #                 and game_object.direction != value:
+            #             game_object.direction = direction[1]
+            # else:
+            for direction, value\
+                    in full_directions['One_direction'].items():
+                if event.key in direction\
+                        and game_object.direction != value:
+                    game_object.direction = direction[1]
+        elif event.type == pygame.KEYDOWN and event.key == pygame.K_p:
+            global game_pause
+            game_pause = not game_pause
+            if game_pause:
+                pygame.time.wait(300)
+        elif event.type == pygame.KEYUP and event.key != pygame.K_p:
             DIAG_LIST.pop(0)
 
 
@@ -340,10 +371,10 @@ def main() -> None:
         handle_keys(snake)
         snake.update_direction()
         snake.move(apple, wr_apple_1, wr_apple_2)
-        apple.draw()
-        wr_apple_1.draw()
-        wr_apple_2.draw()
-        snake.draw(screen)
+        apple.draw_cells()
+        wr_apple_1.draw_cells()
+        wr_apple_2.draw_cells()
+        snake.draw_cells(screen)
         pygame.display.update()
 
 
