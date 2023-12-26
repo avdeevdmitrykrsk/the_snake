@@ -16,13 +16,13 @@ import pygame
 pygame.init()
 
 # Константы для размеров
-SCREEN_WIDTH: int = 1240    # Размер окна по координате X
-SCREEN_HEIGHT: int = 800    # Размер окна по координате Y
-GRID_SIZE: int = 20    # Размер 1 клетки
+SCREEN_WIDTH: int = 1240  # Размер окна по координате X
+SCREEN_HEIGHT: int = 800  # Размер окна по координате Y
+GRID_SIZE: int = 20  # Размер 1 клетки
 GRID_WIDTH: int = SCREEN_WIDTH // GRID_SIZE
 GRID_HEIGHT: int = SCREEN_HEIGHT // GRID_SIZE
-START_POS_WIDTH: int = SCREEN_WIDTH // 2    # Начальная позиция по X
-START_POS_HEIGHT: int = SCREEN_HEIGHT // 2    # Начальная позиция по Y
+START_POS_WIDTH: int = SCREEN_WIDTH // 2  # Начальная позиция по X
+START_POS_HEIGHT: int = SCREEN_HEIGHT // 2  # Начальная позиция по Y
 
 # Направления движения
 UP: tuple = (0, -1)
@@ -35,8 +35,8 @@ D_L_DIAG: tuple = (-1, 1)
 D_R_DIAG: tuple = (1, 1)
 
 # Длины тела змейки
-SNAKE_DEFAULT_LENGTH: int = 1    # Базовая
-SNAKE_CHANGE_LENGTH: int = 1    # Изменение длины
+SNAKE_DEFAULT_LENGTH: int = 1  # Базовая
+SNAKE_CHANGE_LENGTH: int = 1  # Изменение длины
 
 NEW_SNAKE_POS: int = -20
 
@@ -61,8 +61,8 @@ SPEED: int = 13
 START_BOARD_X: int = 0
 START_BOARD_Y: int = 0
 WINDOW_TITLE: str = 'Змейка'
-DISPLAY_MODE: int = 0    # Режим отображения экрана
-COLOR_DEPTH_BIT: int = 32    # Глубина цвета экрана
+DISPLAY_MODE: int = 0  # Режим отображения экрана
+COLOR_DEPTH_BIT: int = 32  # Глубина цвета экрана
 screen = pygame.display.set_mode(
     (SCREEN_WIDTH, SCREEN_HEIGHT), DISPLAY_MODE, COLOR_DEPTH_BIT
 )
@@ -92,8 +92,7 @@ class GameObject:
     def draw_cells(self, surface, color: tuple) -> None:
         """Метод отрисовывает яблоки в игре."""
         rect = pygame.Rect(
-            (self.position[0], self.position[1]),
-            (GRID_SIZE, GRID_SIZE)
+            (self.position[0], self.position[1]), (GRID_SIZE, GRID_SIZE)
         )
         pygame.draw.rect(surface, self.body_color, rect)
         pygame.draw.rect(surface, color, rect, APPLE_LINE_THICKNESS)
@@ -101,14 +100,10 @@ class GameObject:
     def randomize_position(self) -> None:
         """Устанавливает случайную позицию для яблок в игре."""
         self.position = (
-            (
-                round(randint(
-                    START_BOARD_X, SCREEN_WIDTH - 20
-                ) / GRID_SIZE) * GRID_SIZE,
-                round(randint(
-                    START_BOARD_Y, SCREEN_HEIGHT - 20
-                ) / GRID_SIZE) * GRID_SIZE,
-            )
+            round(randint(START_BOARD_X, SCREEN_WIDTH - 20) / GRID_SIZE)
+            * GRID_SIZE,
+            round(randint(START_BOARD_Y, SCREEN_HEIGHT - 20) / GRID_SIZE)
+            * GRID_SIZE,
         )
 
         if self.position in Snake.available_positions:
@@ -191,15 +186,15 @@ class Snake(GameObject):
     def draw_cells(self, surface):
         """Метод отрисовывает змейку и затирает последний сегмент."""
         for position in self.positions:
-            rect = (
-                pygame.Rect(
-                    (position[0], position[1]), (GRID_SIZE, GRID_SIZE)
-                )
+            rect = pygame.Rect(
+                (position[0], position[1]), (GRID_SIZE, GRID_SIZE)
             )
             pygame.draw.rect(surface, self.body_color, rect)
             pygame.draw.rect(
-                surface, BOARD_BACKGROUND_COLOR,
-                rect, SNAKE_BODY_LINE_THICKNESS,
+                surface,
+                BOARD_BACKGROUND_COLOR,
+                rect,
+                SNAKE_BODY_LINE_THICKNESS,
             )
 
         head = self.positions[0]
@@ -210,8 +205,7 @@ class Snake(GameObject):
         )
         if self.last:
             last_rect = pygame.Rect(
-                (self.last[0], self.last[1]),
-                (GRID_SIZE, GRID_SIZE)
+                (self.last[0], self.last[1]), (GRID_SIZE, GRID_SIZE)
             )
             pygame.draw.rect(surface, BOARD_BACKGROUND_COLOR, last_rect)
 
@@ -252,21 +246,13 @@ class Snake(GameObject):
         змейки исходя из нажатой клавиши.
         """
         if self.direction is UP:
-            self.positions.insert(
-                0, (self.head[0], self.head[1] - GRID_SIZE)
-            )
+            self.positions.insert(0, (self.head[0], self.head[1] - GRID_SIZE))
         elif self.direction is RIGHT:
-            self.positions.insert(
-                0, (self.head[0] + GRID_SIZE, self.head[1])
-            )
+            self.positions.insert(0, (self.head[0] + GRID_SIZE, self.head[1]))
         elif self.direction is DOWN:
-            self.positions.insert(
-                0, (self.head[0], self.head[1] + GRID_SIZE)
-            )
+            self.positions.insert(0, (self.head[0], self.head[1] + GRID_SIZE))
         elif self.direction is LEFT:
-            self.positions.insert(
-                0, (self.head[0] - GRID_SIZE, self.head[1])
-            )
+            self.positions.insert(0, (self.head[0] - GRID_SIZE, self.head[1]))
         # elif self.direction is U_L_DIAG:
         #     self.positions.insert(
         #         0, (self.head[0] - GRID_SIZE, self.head[1] - GRID_SIZE)
@@ -308,14 +294,12 @@ class Snake(GameObject):
 
 
 full_directions: dict = {
-
     'One_direction': {
         (pygame.K_UP, UP): DOWN,
         (pygame.K_DOWN, DOWN): UP,
         (pygame.K_LEFT, LEFT): RIGHT,
         (pygame.K_RIGHT, RIGHT): LEFT,
     },
-
     # 'Diag_direction': {
     #     ((pygame.K_UP, pygame.K_LEFT), U_L_DIAG): D_R_DIAG,
     #     ((pygame.K_UP, pygame.K_RIGHT), U_R_DIAG): D_L_DIAG,
@@ -345,10 +329,8 @@ def handle_keys(game_object) -> None:
             #                 and game_object.direction != value:
             #             game_object.direction = direction[1]
             # else:
-            for direction, value\
-                    in full_directions['One_direction'].items():
-                if event.key in direction\
-                        and game_object.direction != value:
+            for direction, value in full_directions['One_direction'].items():
+                if event.key in direction and game_object.direction != value:
                     game_object.direction = direction[1]
         elif event.type == pygame.KEYDOWN and event.key == pygame.K_p:
             global game_pause
